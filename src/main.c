@@ -159,6 +159,82 @@ void miniMap()
         ((mouse.y - scene.boundary.y) / cellHeight)};
     circle(mosueGridPos, 3, (Color){0x00, 0xFF, 0x00, 0xFF});
     line(scene.player.pos, mosueGridPos, (Color){0x00, 0xFF, 0x00, 0xFF});
+
+    // y = mx + c
+    Vector2 p1 = scene.player.pos;
+    Vector2 p2 = mosueGridPos;
+    // p1.y = m * p1.x + c
+    // p2.y = m * p2.x + c
+    // m = (p2.y - p1.y) / (p2.x - p1.x)
+    // c = p1.y - m * p1.x
+    float m = (p2.y - p1.y) / (p2.x - p1.x);
+    float c = p1.y - m * p1.x;
+
+    // check for vertical line
+    {
+        int dir = 1;
+        if (p2.x < p1.x)
+        {
+            dir = -1;
+        }
+
+        float x = p1.x;
+        while (x < mapWidth)
+        {
+            float y = m * x + c;
+
+            if (y <= 0 || y >= mapHeight - 1 || x <= 0 || x >= mapWidth - 1)
+            {
+                break;
+            }
+
+            int gridX = (int)x;
+            int gridY = (int)y;
+            if (dir == -1)
+            {
+                gridX = (int)x - 1;
+            }
+
+            if (worldMap[gridX][(int)y] != 0)
+            {
+                circle((Vector2){x, y}, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+            }
+            x += dir;
+        }
+    }
+
+    // check for horizontal line
+    {
+        int dir = 1;
+        if (p2.y < p1.y)
+        {
+            dir = -1;
+        }
+
+        float y = p1.y;
+        while (y < mapHeight)
+        {
+            float x = (y - c) / m;
+
+            if (y <= 0 || y >= mapHeight - 1 || x <= 0 || x >= mapWidth - 1)
+            {
+                break;
+            }
+
+            int gridX = (int)x;
+            int gridY = (int)y;
+            if (dir == -1)
+            {
+                gridY = (int)y - 1;
+            }
+
+            if (worldMap[(int)x][gridY] != 0)
+            {
+                circle((Vector2){x, y}, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+            }
+            y += dir;
+        }
+    }
 }
 
 int main(void)
