@@ -37,7 +37,14 @@ Color colors[] = {
     (Color){0x00, 0xFF, 0x00, 0xFF},
     (Color){0x00, 0x00, 0xFF, 0xFF}};
 
-Vector2 getGridCoords(Rectangle bound, Vector2 pos)
+typedef struct BlockInfo
+{
+    Vector2 pos;
+    Vector2 gridPos;
+} BlockInfo;
+
+Vector2
+getGridCoords(Rectangle bound, Vector2 pos)
 {
     float gridWidth = bound.width / gridRows;
     float gridHeight = bound.height / gridCols;
@@ -102,7 +109,7 @@ FovRange getFovRange(Rectangle bound, Vector2 pos, float angle, float fov, float
     return (FovRange){pl, pr};
 }
 
-Vector2 getClosestIntersection(Rectangle bound, Vector2 start, Vector2 p2, float m, float b, bool checkX)
+BlockInfo getClosestIntersection(Rectangle bound, Vector2 start, Vector2 p2, float m, float b, bool checkX)
 {
     float gridWidth = bound.width / gridRows;
     float gridHeight = bound.height / gridCols;
@@ -160,7 +167,7 @@ Vector2 getClosestIntersection(Rectangle bound, Vector2 start, Vector2 p2, float
 
         if (scene.grid[(int)gridPos.x][(int)gridPos.y] != 0)
         {
-            return (Vector2){x, y};
+            return (BlockInfo){(Vector2){x, y}, gridPos};
         }
 
         i += (checkX ? gridWidth : gridHeight) * dir;
@@ -177,7 +184,7 @@ Vector2 getClosestIntersection(Rectangle bound, Vector2 start, Vector2 p2, float
     //     float y = (dir == 1 ? bound.height + bound.y : bound.y);
     //     return (Vector2){(y - b) / m, y};
     // }
-    return (Vector2){-1, -1};
+    return (BlockInfo){(Vector2){-1, -1}, (Vector2){-1, -1}};
 }
 
 void miniMap(Rectangle rect)
@@ -215,17 +222,17 @@ void miniMap(Rectangle rect)
         const float b = p1.y - m * p1.x;
         Vector2 p1 = gridCoordsToRectPos(rect, scene.player.pos);
 
-        Vector2 blockY = getClosestIntersection(rect, p1, p, m, b, true);
-        Vector2 blockX = getClosestIntersection(rect, p1, p, m, b, false);
+        BlockInfo blockY = getClosestIntersection(rect, p1, p, m, b, true);
+        BlockInfo blockX = getClosestIntersection(rect, p1, p, m, b, false);
 
-        Vector2 block = (distance(p1, blockY) < distance(p1, blockX)) ? blockY : blockX;
+        BlockInfo block = (distance(p1, blockY.pos) < distance(p1, blockX.pos)) ? blockY : blockX;
 
-        if (block.x < 0 && block.y < 0)
+        if (block.gridPos.x < 0 && block.gridPos.y < 0)
         {
             continue;
         }
 
-        DrawCircleV(block, 1, (Color){0xFF, 0x00, 0x00, 0xFF});
+        DrawCircleV(block.pos, 1, (Color){0xFF, 0x00, 0x00, 0xFF});
     }
 }
 
@@ -259,21 +266,20 @@ void render(Rectangle bound)
         Vector2 p1 = gridCoordsToRectPos(bound, scene.player.pos);
 
         // Find the closest intersection points
-        Vector2 blockY = getClosestIntersection(bound, p1, p, m, b, true);
-        Vector2 blockX = getClosestIntersection(bound, p1, p, m, b, false);
-        Vector2 block = (distance(p1, blockY) < distance(p1, blockX)) ? blockY : blockX;
+        BlockInfo blockY = getClosestIntersection(bound, p1, p, m, b, true);
+        BlockInfo blockX = getClosestIntersection(bound, p1, p, m, b, false);
+        BlockInfo block = (distance(p1, blockY.pos) < distance(p1, blockX.pos)) ? blockY : blockX;
 
         // Skip if the intersection point is invalid
-        if (block.x < 0 && block.y < 0)
+        if (block.pos.x < 0 && block.pos.y < 0)
         {
             continue;
         }
 
         // Calculate the grid cell coordinates of the intersection point
-        Vector2 cell = getGridCoords(bound, block);
 
         // Calculate the distance vector and the height of the wall slice
-        Vector2 v = vectorSub(block, p1);
+        Vector2 v = vectorSub(block.pos, p1);
         Vector2 d = getVectorFromAngleDeg(scene.player.angle);
         float distance = dot(v, d);
 
@@ -281,7 +287,7 @@ void render(Rectangle bound)
         float h = 10000 / (distance + 0.0001f); // Added a small value to avoid division by zero
 
         // Draw the vertical line representing the wall slice
-        DrawLineV((Vector2){x, 400 - h / 2}, (Vector2){x, 400 + h / 2}, colors[1]);
+        DrawLineV((Vector2){x, 400 - h / 2}, (Vector2){x, 400 + h / 2}, colors[scene.grid[(int)block.gridPos.x][(int)block.gridPos.y]]);
     }
 }
 
