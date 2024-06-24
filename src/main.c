@@ -91,9 +91,21 @@ float vectorDot(Vector2 a, Vector2 b)
     return a.x * b.x + a.y * b.y;
 }
 
+Vector2 angleToVectorDeg(float angle)
+{
+    return (Vector2){cos(angle * DEG2RAD), sin(angle * DEG2RAD)};
+}
+
+Vector2 rotateVectorDeg(Vector2 a, float angle)
+{
+    return (Vector2){
+        a.x * cos(angle * DEG2RAD) - a.y * sin(angle * DEG2RAD),
+        a.x * sin(angle * DEG2RAD) + a.y * cos(angle * DEG2RAD)};
+}
+
 Scene scene = {
     (Rectangle){0, 0, 240 * 4, 240 * 4},
-    (Player){(Vector2){22, 11}, 0}};
+    (Player){(Vector2){15, 11}, 0}};
 
 void rect(Rectangle rect, Color color)
 {
@@ -152,12 +164,28 @@ void miniMap()
     }
 
     circle(scene.player.pos, 3, (Color){0x00, 0xFF, 0x00, 0xFF});
+    Vector2 dir = angleToVectorDeg(scene.player.angle);
+    float fov = 90;
+    float halfFov = fov / 2;
+    // sin(halfFov) = halfWidth / distance
+    float halfWidth = tan(halfFov * DEG2RAD);
+    Vector2 pp2 = vectorAdd(scene.player.pos, dir);
+    Vector2 left = vectorAdd(pp2, vectorMul(rotateVectorDeg(dir, -90), halfWidth));
+    Vector2 right = vectorAdd(pp2, vectorMul(rotateVectorDeg(dir, 90), halfWidth));
+
+    line(scene.player.pos, pp2, (Color){0x00, 0xFF, 0x00, 0xFF});
+    line(scene.player.pos, left, (Color){0x00, 0xFF, 0x00, 0xFF});
+    line(scene.player.pos, right, (Color){0x00, 0xFF, 0x00, 0xFF});
+
+    // line(scene.player.pos, vectorAdd(scene.player.pos, right), (Color){0x00, 0xFF, 0x00, 0xFF});
+    line(left, right, (Color){0x00, 0xFF, 0x00, 0xFF});
 
     Vector2 mouse = GetMousePosition();
     Vector2 mosueGridPos = (Vector2){
         ((mouse.x - scene.boundary.x) / cellWidth),
         ((mouse.y - scene.boundary.y) / cellHeight)};
     circle(mosueGridPos, 3, (Color){0x00, 0xFF, 0x00, 0xFF});
+
     line(scene.player.pos, mosueGridPos, (Color){0x00, 0xFF, 0x00, 0xFF});
 
     // y = mx + c
@@ -169,6 +197,9 @@ void miniMap()
     // c = p1.y - m * p1.x
     float m = (p2.y - p1.y) / (p2.x - p1.x);
     float c = p1.y - m * p1.x;
+
+    Vector2 blockY = {0, 0};
+    bool isBlockY = false;
 
     // check for vertical line
     {
@@ -197,11 +228,17 @@ void miniMap()
 
             if (worldMap[gridX][(int)y] != 0)
             {
-                circle((Vector2){x, y}, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+                // circle((Vector2){x, y}, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+                blockY = (Vector2){x, y};
+                isBlockY = true;
+                break;
             }
             x += dir;
         }
     }
+
+    Vector2 blockX = {0, 0};
+    bool isBlockX = false;
 
     // check for horizontal line
     {
@@ -230,10 +267,35 @@ void miniMap()
 
             if (worldMap[(int)x][gridY] != 0)
             {
-                circle((Vector2){x, y}, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+                // circle((Vector2){x, y}, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+                blockX = (Vector2){x, y};
+                isBlockX = true;
+                break;
             }
             y += dir;
         }
+    }
+
+    if (isBlockX && isBlockY)
+    {
+        float distX = vectorMag(vectorSub(scene.player.pos, blockX));
+        float distY = vectorMag(vectorSub(scene.player.pos, blockY));
+        if (distX < distY)
+        {
+            circle(blockX, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+        }
+        else
+        {
+            circle(blockY, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+        }
+    }
+    else if (isBlockX)
+    {
+        circle(blockX, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
+    }
+    else if (isBlockY)
+    {
+        circle(blockY, 3, (Color){0xFF, 0x00, 0x00, 0xFF});
     }
 }
 
