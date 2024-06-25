@@ -10,7 +10,7 @@
 #define mapHeight 24
 #define ESP 0.0000001
 #define rayStep 0.01
-#define stripWidth 5
+#define stripWidth 1
 
 int worldMap[mapWidth][mapHeight] =
     {
@@ -470,6 +470,9 @@ void render()
             // Rectangle rect = (Rectangle){x * stripWidth, wallStart, stripWidth, wallHeight};
             for (int i = 0; i < stripWidth; i++)
             {
+                // britness based on distance
+                int brightness = 255 / dist;
+
                 DrawLine(x * stripWidth + i, wallStart, x * stripWidth + i, wallEnd, color);
             }
         }
