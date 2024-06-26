@@ -131,8 +131,8 @@ void drawRays3D()
 {
     int r, mx, my, mp, dof;
     float rx, ry, ra, xo, yo, dis;
-    float fov = 90;
-    ra = scene.player.angle - DEG2RAD * fov / 2;
+    float fov = 90.0f;
+    ra = scene.player.angle - DEG2RAD * fov / 2.0f;
     if (ra < 0)
     {
         ra += 2 * PI;
@@ -231,15 +231,15 @@ void drawRays3D()
         DrawLine(scene.player.pos.x, scene.player.pos.y, rx, ry, (Color){0xFF, 0x00, 0x00, 0xFF});
         float ca = scene.player.angle - ra;
         if (ca < 0) {
-            ca += 2 * PI;
+            ca += 2.0f * PI;
         }
-        if (ca > 2 * PI) {
-            ca -= 2 * PI;
+        if (ca > 2.0f * PI) {
+            ca -= 2.0f * PI;
         }
         disT = disT * cos(ca);
         // --- draw 3D walls ---
         if (disT != 0) {
-            float lineH = (mapS * screenHeight) / disT;
+            float lineH =  (mapS * 800) / disT;
             if (lineH > screenHeight) {
                 lineH = screenHeight;
             }
